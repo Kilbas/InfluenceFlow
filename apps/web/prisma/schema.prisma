@@ -5,3 +5,90 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  owner
+  admin
+  member
+}
+
+model Workspace {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users         User[]
+  contacts      Contact[]
+  invitations   Invitation[]
+  importBatches ImportBatch[]
+  auditEvents   AuditEvent[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  workspaceId  String    @map("workspace_id") @db.Uuid
+  email        String
+  passwordHash String    @map("password_hash")
+  displayName  String    @map("display_name")
+  role         Role
+  createdAt    DateTime  @default(now()) @map("created_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  workspace           Workspace    @relation(fields: [workspaceId], references: [id])
+  ownedContacts       Contact[]    @relation("ContactOwner")
+  invitationsCreated  Invitation[] @relation("InvitationCreatedBy")
+  invitationsAccepted Invitation[] @relation("InvitationAcceptedBy")
+  importBatches       ImportBatch[]
+  auditEvents         AuditEvent[] @relation("AuditActor")
+
+  @@unique([workspaceId, email])
+  @@map("users")
+}
+
+model Contact {
+  id          String @id @default(uuid()) @db.Uuid
+  workspaceId String @map("workspace_id") @db.Uuid
+  ownerUserId String @map("owner_user_id") @db.Uuid
+  email       String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  owner     User      @relation("ContactOwner", fields: [ownerUserId], references: [id])
+
+  @@map("contacts")
+}
+
+model Invitation {
+  id           String  @id @default(uuid()) @db.Uuid
+  workspaceId  String  @map("workspace_id") @db.Uuid
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  createdById  String  @map("created_by_user_id") @db.Uuid
+  createdBy    User    @relation("InvitationCreatedBy", fields: [createdById], references: [id])
+  acceptedById String? @map("accepted_by_user_id") @db.Uuid
+  acceptedBy   User?   @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id])
+
+  @@map("invitations")
+}
+
+model ImportBatch {
+  id          String @id @default(uuid()) @db.Uuid
+  workspaceId String @map("workspace_id") @db.Uuid
+  userId      String @map("user_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("import_batches")
+}
+
+model AuditEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  actor       User?     @relation("AuditActor", fields: [actorUserId], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("audit_events")
+}
+
