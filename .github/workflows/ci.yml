@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, phase-1-foundation]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: influenceflow
+          POSTGRES_PASSWORD: dev_password
+          POSTGRES_DB: influenceflow_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U influenceflow"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Write apps/web/.env
+        working-directory: apps/web
+        run: echo "DATABASE_URL=$DATABASE_URL" > .env
+        env:
+          DATABASE_URL: postgresql://influenceflow:dev_password@localhost:5432/influenceflow_test
+
+      - name: Generate Prisma client
+        working-directory: apps/web
+        run: pnpm prisma generate
+
+      - name: Lint
+        working-directory: apps/web
+        run: pnpm lint
+
+      - name: Typecheck
+        working-directory: apps/web
+        run: pnpm typecheck
+
+      - name: Unit tests
+        working-directory: apps/web
+        run: pnpm test
+        env:
+          DATABASE_URL: postgresql://influenceflow:dev_password@localhost:5432/influenceflow_test
+
+      - name: Push schema
+        working-directory: apps/web
+        run: pnpm prisma db push
+
+      - name: Install browsers
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E tests
+        working-directory: apps/web
+        run: pnpm test:e2e
+        env:
+          DATABASE_URL: postgresql://influenceflow:dev_password@localhost:5432/influenceflow_test
+          NEXTAUTH_SECRET: ci-secret-do-not-use-in-prod
+          NEXTAUTH_URL: http://localhost:3000
