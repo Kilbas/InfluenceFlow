@@ -6,7 +6,6 @@ import { defineConfig } from "@prisma/config";
 loadDotenv({ path: path.join(import.meta.dirname, ".env") });
 
 export default defineConfig({
-  earlyAccess: true,
   schema: path.join(import.meta.dirname, "prisma/schema.prisma"),
   datasource: {
     url: process.env.DATABASE_URL,
