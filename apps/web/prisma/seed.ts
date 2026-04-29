@@ -34,7 +34,7 @@ async function main() {
     return;
   }
 
-  const tempPassword = randomBytes(12).toString("base64url");
+  const tempPassword = process.env.ADMIN_INIT_PASSWORD ?? randomBytes(12).toString("base64url");
   const hash = await hashPassword(tempPassword);
 
   const workspace = await prisma.workspace.create({ data: { name: workspaceName } });
