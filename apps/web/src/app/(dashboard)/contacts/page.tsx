@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { listContactsWithDuplicates } from "@/server/contacts";
 import Link from "next/link";
+import { AgentToggle } from "./AgentToggle";
 
 export default async function ContactsPage() {
   const session = (await auth())!;
@@ -36,7 +37,7 @@ export default async function ContactsPage() {
           {contacts.map((c) => (
             <tr key={c.id} className="border-b">
               <td className="p-2">
-                <input type="checkbox" checked={c.agentActive} readOnly />
+                <AgentToggle contactId={c.id} initial={c.agentActive} />
               </td>
               <td className="p-2">
                 <Link className="underline" href={`/contacts/${c.id}`}>
