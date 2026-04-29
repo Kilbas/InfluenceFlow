@@ -1,10 +1,10 @@
 import { auth } from "@/lib/auth";
-import { listContactsForUser } from "@/server/contacts";
+import { listContactsWithDuplicates } from "@/server/contacts";
 import Link from "next/link";
 
 export default async function ContactsPage() {
   const session = (await auth())!;
-  const contacts = await listContactsForUser({
+  const contacts = await listContactsWithDuplicates({
     workspaceId: session.user.workspaceId,
     userId: session.user.id,
     role: session.user.role,
@@ -42,6 +42,14 @@ export default async function ContactsPage() {
                 <Link className="underline" href={`/contacts/${c.id}`}>
                   {c.displayName}
                 </Link>
+                {"duplicate" in c && c.duplicate && (
+                  <span
+                    title={`Also held by ${c.duplicate.displayName}`}
+                    className="ml-2 rounded bg-amber-100 px-1 text-xs"
+                  >
+                    dup
+                  </span>
+                )}
               </td>
               <td className="p-2">{c.email}</td>
               <td className="p-2">{c.instagramHandle ?? "—"}</td>

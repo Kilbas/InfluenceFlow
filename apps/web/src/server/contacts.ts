@@ -63,3 +63,44 @@ export async function updateContact(
   if (!target) return null;
   return prisma.contact.update({ where: { id: target.id }, data: patch });
 }
+
+export async function listContactsWithDuplicates(ctx: AuthCtx) {
+  const contacts = await listContactsForUser(ctx);
+  if (isAdmin(ctx.role))
+    return contacts.map((c) => ({ ...c, duplicate: null as null | { displayName: string } }));
+  if (contacts.length === 0)
+    return contacts.map((c) => ({ ...c, duplicate: null as null | { displayName: string } }));
+
+  const emails = contacts.map((c) => c.email);
+  const handles = contacts
+    .map((c) => c.instagramHandle)
+    .filter(Boolean) as string[];
+
+  const colleagueRows = await prisma.contact.findMany({
+    where: {
+      workspaceId: ctx.workspaceId,
+      deletedAt: null,
+      ownerUserId: { not: ctx.userId },
+      OR: [{ email: { in: emails } }, { instagramHandle: { in: handles } }],
+    },
+    select: {
+      email: true,
+      instagramHandle: true,
+      owner: { select: { displayName: true } },
+    },
+  });
+
+  const byEmail = new Map<string, string>();
+  const byHandle = new Map<string, string>();
+  for (const r of colleagueRows) {
+    byEmail.set(r.email, r.owner.displayName);
+    if (r.instagramHandle) byHandle.set(r.instagramHandle, r.owner.displayName);
+  }
+
+  return contacts.map((c) => {
+    const dup =
+      byEmail.get(c.email) ??
+      (c.instagramHandle ? byHandle.get(c.instagramHandle) : undefined);
+    return { ...c, duplicate: dup ? { displayName: dup } : null };
+  });
+}
