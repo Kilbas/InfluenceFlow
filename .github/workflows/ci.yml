@@ -48,9 +48,9 @@ jobs:
         working-directory: apps/web
         run: pnpm typecheck
 
-      - name: Push schema
+      - name: Apply migrations
         working-directory: apps/web
-        run: pnpm prisma db push
+        run: pnpm prisma migrate deploy
 
       - name: Unit tests
         working-directory: apps/web
