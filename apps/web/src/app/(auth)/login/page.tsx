@@ -2,9 +2,11 @@
 import { useActionState } from "react";
 import { loginAction } from "./actions";
 
+type LoginState = { error: string } | null;
+
 export default function LoginPage() {
-  const [state, formAction] = useActionState(
-    async (_: any, fd: FormData) => loginAction(fd),
+  const [state, formAction] = useActionState<LoginState, FormData>(
+    async (_prev, fd) => (await loginAction(fd)) ?? null,
     null
   );
 

@@ -16,8 +16,10 @@ export async function loginAction(formData: FormData) {
 
   try {
     await signIn("credentials", { ...parsed.data, redirectTo: "/contacts" });
-  } catch (e: any) {
-    if (e?.type === "CredentialsSignin") return { error: "Invalid email or password" };
+  } catch (e) {
+    if (e instanceof Error && "type" in e && e.type === "CredentialsSignin") {
+      return { error: "Invalid email or password" };
+    }
     throw e;
   }
 }
