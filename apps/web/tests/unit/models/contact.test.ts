@@ -18,7 +18,10 @@ describe("contact uniqueness", () => {
   let workspaceId: string;
 
   beforeEach(async () => {
+    await prisma.auditEvent.deleteMany();
     await prisma.contact.deleteMany();
+    await prisma.importBatch.deleteMany();
+    await prisma.invitation.deleteMany();
     await prisma.user.deleteMany();
     await prisma.workspace.deleteMany();
     const ws = await prisma.workspace.create({ data: { name: "test" } });

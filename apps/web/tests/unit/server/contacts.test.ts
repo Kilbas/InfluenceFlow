@@ -4,7 +4,10 @@ import { hashPassword } from "@/lib/password";
 import { listContactsForUser, getContactForUser } from "@/server/contacts";
 
 async function setup() {
+  await prisma.auditEvent.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.importBatch.deleteMany();
+  await prisma.invitation.deleteMany();
   await prisma.user.deleteMany();
   await prisma.workspace.deleteMany();
   const ws = await prisma.workspace.create({ data: { name: "T" } });
