@@ -67,5 +67,5 @@ jobs:
         run: pnpm test:e2e
         env:
           DATABASE_URL: postgresql://influenceflow:dev_password@localhost:5432/influenceflow_test
-          NEXTAUTH_SECRET: ci-secret-do-not-use-in-prod
-          NEXTAUTH_URL: http://localhost:3000
+          AUTH_SECRET: ci-secret-do-not-use-in-prod
+          AUTH_URL: http://localhost:3000
