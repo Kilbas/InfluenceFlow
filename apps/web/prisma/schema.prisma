@@ -48,14 +48,34 @@ model User {
 }
 
 model Contact {
-  id          String @id @default(uuid()) @db.Uuid
-  workspaceId String @map("workspace_id") @db.Uuid
-  ownerUserId String @map("owner_user_id") @db.Uuid
-  email       String
+  id                    String   @id @default(uuid()) @db.Uuid
+  workspaceId           String   @map("workspace_id") @db.Uuid
+  ownerUserId           String   @map("owner_user_id") @db.Uuid
+  email                 String
+  instagramHandle       String?  @map("instagram_handle")
+  instagramUrl          String?  @map("instagram_url")
+  displayName           String   @map("display_name")
+  language              String?
+  country               String?
+  niche                 String?
+  followersCount        Int?     @map("followers_count")
+  notes                 String?
+  phone                 String?
+  youtubeChannelName    String?  @map("youtube_channel_name")
+  agentActive           Boolean  @default(false) @map("agent_active")
+  sourceImportBatchId   String?  @map("source_import_batch_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  owner     User      @relation("ContactOwner", fields: [ownerUserId], references: [id])
+  workspace          Workspace    @relation(fields: [workspaceId], references: [id])
+  owner              User         @relation("ContactOwner", fields: [ownerUserId], references: [id])
+  sourceImportBatch  ImportBatch? @relation(fields: [sourceImportBatchId], references: [id])
 
+  @@index([workspaceId, ownerUserId, agentActive])
+  @@index([workspaceId, email])
+  @@index([workspaceId, instagramHandle])
+  @@index([workspaceId, agentActive])
   @@map("contacts")
 }
 
@@ -72,11 +92,22 @@ model Invitation {
 }
 
 model ImportBatch {
-  id          String @id @default(uuid()) @db.Uuid
-  workspaceId String @map("workspace_id") @db.Uuid
-  userId      String @map("user_id") @db.Uuid
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
-  user        User      @relation(fields: [userId], references: [id])
+  id                                   String   @id @default(uuid()) @db.Uuid
+  workspaceId                          String   @map("workspace_id") @db.Uuid
+  userId                               String   @map("user_id") @db.Uuid
+  filename                             String
+  fileHash                             String   @map("file_hash")
+  rowsTotal                            Int      @map("rows_total")
+  rowsImportedNew                      Int      @map("rows_imported_new")
+  rowsSkippedOwnDuplicate              Int      @map("rows_skipped_own_duplicate")
+  rowsImportedWithColleagueWarning     Int      @map("rows_imported_with_colleague_warning")
+  rowsRejected                         Int      @map("rows_rejected")
+  rejectionReport                      Json     @map("rejection_report")
+  createdAt                            DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  contacts  Contact[]
 
   @@map("import_batches")
 }
