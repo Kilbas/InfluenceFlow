@@ -80,13 +80,20 @@ model Contact {
 }
 
 model Invitation {
-  id           String  @id @default(uuid()) @db.Uuid
-  workspaceId  String  @map("workspace_id") @db.Uuid
-  workspace    Workspace @relation(fields: [workspaceId], references: [id])
-  createdById  String  @map("created_by_user_id") @db.Uuid
-  createdBy    User    @relation("InvitationCreatedBy", fields: [createdById], references: [id])
-  acceptedById String? @map("accepted_by_user_id") @db.Uuid
-  acceptedBy   User?   @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id])
+  id                  String    @id @default(uuid()) @db.Uuid
+  workspaceId         String    @map("workspace_id") @db.Uuid
+  email               String
+  role                Role
+  token               String    @unique
+  createdById         String    @map("created_by_user_id") @db.Uuid
+  expiresAt           DateTime? @map("expires_at")
+  acceptedAt          DateTime? @map("accepted_at")
+  acceptedById        String?   @map("accepted_by_user_id") @db.Uuid
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  createdBy   User      @relation("InvitationCreatedBy", fields: [createdById], references: [id])
+  acceptedBy  User?     @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id])
 
   @@map("invitations")
 }
