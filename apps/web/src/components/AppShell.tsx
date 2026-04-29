@@ -1,0 +1,35 @@
+import Link from "next/link";
+import { LogoutButton } from "./LogoutButton";
+import type { Session } from "next-auth";
+
+export function AppShell({
+  user,
+  children,
+}: {
+  user: Session["user"];
+  children: React.ReactNode;
+}) {
+  const isAdmin = user.role === "admin" || user.role === "owner";
+  return (
+    <div className="flex min-h-screen">
+      <aside className="w-56 border-r bg-gray-50 p-4">
+        <div className="mb-6 text-lg font-semibold">InfluenceFlow</div>
+        <nav className="space-y-2 text-sm">
+          <Link className="block" href="/contacts">Contacts</Link>
+          <Link className="block" href="/contacts/import">Import</Link>
+          {isAdmin && <Link className="block" href="/team">Team</Link>}
+          {isAdmin && <Link className="block" href="/audit">Audit log</Link>}
+        </nav>
+      </aside>
+      <div className="flex-1">
+        <header className="flex items-center justify-between border-b p-4 text-sm">
+          <span>
+            {user.name} <span className="text-gray-500">({user.role})</span>
+          </span>
+          <LogoutButton />
+        </header>
+        <main className="p-6">{children}</main>
+      </div>
+    </div>
+  );
+}

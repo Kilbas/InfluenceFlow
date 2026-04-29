@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  owner
+  admin
+  member
+}
+
+model Workspace {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users         User[]
+  contacts      Contact[]
+  invitations   Invitation[]
+  importBatches ImportBatch[]
+  auditEvents   AuditEvent[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  workspaceId  String    @map("workspace_id") @db.Uuid
+  email        String
+  passwordHash String    @map("password_hash")
+  displayName  String    @map("display_name")
+  role         Role
+  createdAt    DateTime  @default(now()) @map("created_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  workspace           Workspace    @relation(fields: [workspaceId], references: [id])
+  ownedContacts       Contact[]    @relation("ContactOwner")
+  invitationsCreated  Invitation[] @relation("InvitationCreatedBy")
+  invitationsAccepted Invitation[] @relation("InvitationAcceptedBy")
+  importBatches       ImportBatch[]
+  auditEvents         AuditEvent[] @relation("AuditActor")
+
+  @@unique([workspaceId, email])
+  @@map("users")
+}
+
+model Contact {
+  id                    String   @id @default(uuid()) @db.Uuid
+  workspaceId           String   @map("workspace_id") @db.Uuid
+  ownerUserId           String   @map("owner_user_id") @db.Uuid
+  email                 String
+  instagramHandle       String?  @map("instagram_handle")
+  instagramUrl          String?  @map("instagram_url")
+  displayName           String   @map("display_name")
+  language              String?
+  country               String?
+  niche                 String?
+  followersCount        Int?     @map("followers_count")
+  notes                 String?
+  phone                 String?
+  youtubeChannelName    String?  @map("youtube_channel_name")
+  agentActive           Boolean  @default(false) @map("agent_active")
+  sourceImportBatchId   String?  @map("source_import_batch_id") @db.Uuid
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
+
+  workspace          Workspace    @relation(fields: [workspaceId], references: [id])
+  owner              User         @relation("ContactOwner", fields: [ownerUserId], references: [id])
+  sourceImportBatch  ImportBatch? @relation(fields: [sourceImportBatchId], references: [id])
+
+  @@index([workspaceId, ownerUserId, agentActive])
+  @@index([workspaceId, email])
+  @@index([workspaceId, instagramHandle])
+  @@index([workspaceId, agentActive])
+  @@map("contacts")
+}
+
+model Invitation {
+  id                  String    @id @default(uuid()) @db.Uuid
+  workspaceId         String    @map("workspace_id") @db.Uuid
+  email               String
+  role                Role
+  token               String    @unique
+  createdById         String    @map("created_by_user_id") @db.Uuid
+  expiresAt           DateTime? @map("expires_at")
+  acceptedAt          DateTime? @map("accepted_at")
+  acceptedById        String?   @map("accepted_by_user_id") @db.Uuid
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  createdBy   User      @relation("InvitationCreatedBy", fields: [createdById], references: [id])
+  acceptedBy  User?     @relation("InvitationAcceptedBy", fields: [acceptedById], references: [id])
+
+  @@map("invitations")
+}
+
+model ImportBatch {
+  id                                   String   @id @default(uuid()) @db.Uuid
+  workspaceId                          String   @map("workspace_id") @db.Uuid
+  userId                               String   @map("user_id") @db.Uuid
+  filename                             String
+  fileHash                             String   @map("file_hash")
+  rowsTotal                            Int      @map("rows_total")
+  rowsImportedNew                      Int      @map("rows_imported_new")
+  rowsSkippedOwnDuplicate              Int      @map("rows_skipped_own_duplicate")
+  rowsImportedWithColleagueWarning     Int      @map("rows_imported_with_colleague_warning")
+  rowsRejected                         Int      @map("rows_rejected")
+  rejectionReport                      Json     @map("rejection_report")
+  createdAt                            DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+  contacts  Contact[]
+
+  @@map("import_batches")
+}
+
+model AuditEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  actorUserId  String?  @map("actor_user_id") @db.Uuid
+  action       String
+  entityType   String?  @map("entity_type")
+  entityId     String?  @map("entity_id") @db.Uuid
+  payload      Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  actor        User?     @relation("AuditActor", fields: [actorUserId], references: [id])
+
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("audit_events")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id") @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
