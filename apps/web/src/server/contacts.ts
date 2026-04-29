@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { writeAudit } from "@/lib/audit";
 import type { Role } from "@prisma/client";
 
 export type AuthCtx = {
@@ -38,11 +39,29 @@ export async function getContactForUser(
 export async function softDeleteContact(
   ctx: AuthCtx & { contactId: string }
 ) {
-  const target = await getContactForUser(ctx);
-  if (!target) return null;
-  return prisma.contact.update({
-    where: { id: target.id },
-    data: { deletedAt: new Date() },
+  return prisma.$transaction(async (tx) => {
+    const target = await tx.contact.findFirst({
+      where: {
+        id: ctx.contactId,
+        workspaceId: ctx.workspaceId,
+        deletedAt: null,
+        ...(isAdmin(ctx.role) ? {} : { ownerUserId: ctx.userId }),
+      },
+    });
+    if (!target) return null;
+    const updated = await tx.contact.update({
+      where: { id: target.id },
+      data: { deletedAt: new Date() },
+    });
+    await writeAudit(tx, {
+      workspaceId: ctx.workspaceId,
+      actorUserId: ctx.userId,
+      action: "contact.deleted",
+      entityType: "contact",
+      entityId: target.id,
+      payload: { email: target.email },
+    });
+    return updated;
   });
 }
 
@@ -59,9 +78,27 @@ export async function updateContact(
     youtubeChannelName: string | null;
   }>
 ) {
-  const target = await getContactForUser(ctx);
-  if (!target) return null;
-  return prisma.contact.update({ where: { id: target.id }, data: patch });
+  return prisma.$transaction(async (tx) => {
+    const target = await tx.contact.findFirst({
+      where: {
+        id: ctx.contactId,
+        workspaceId: ctx.workspaceId,
+        deletedAt: null,
+        ...(isAdmin(ctx.role) ? {} : { ownerUserId: ctx.userId }),
+      },
+    });
+    if (!target) return null;
+    const updated = await tx.contact.update({ where: { id: target.id }, data: patch });
+    await writeAudit(tx, {
+      workspaceId: ctx.workspaceId,
+      actorUserId: ctx.userId,
+      action: "contact.updated",
+      entityType: "contact",
+      entityId: target.id,
+      payload: { patch },
+    });
+    return updated;
+  });
 }
 
 export async function listContactsWithDuplicates(ctx: AuthCtx) {

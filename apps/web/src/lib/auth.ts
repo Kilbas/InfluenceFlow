@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
+import { writeAudit } from "@/lib/audit";
 import { verifyPassword } from "@/lib/password";
 import { z } from "zod";
 
@@ -26,7 +27,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user) return null;
 
         const ok = await verifyPassword(user.passwordHash, parsed.data.password);
-        if (!ok) return null;
+        if (!ok) {
+          await writeAudit(prisma, {
+            workspaceId: user.workspaceId,
+            actorUserId: user.id,
+            action: "auth.failed_login",
+          });
+          return null;
+        }
+
+        await writeAudit(prisma, {
+          workspaceId: user.workspaceId,
+          actorUserId: user.id,
+          action: "auth.login",
+        });
 
         return {
           id: user.id,

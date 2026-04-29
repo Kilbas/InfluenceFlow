@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { writeAudit } from "@/lib/audit";
 import { hashPassword } from "@/lib/password";
 import { randomBytes } from "node:crypto";
 import type { Role } from "@prisma/client";
@@ -20,15 +21,26 @@ export async function createInvitation(input: {
       ? null
       : new Date(Date.now() + input.expiryDays * 24 * 60 * 60 * 1000);
 
-  return prisma.invitation.create({
-    data: {
+  return prisma.$transaction(async (tx) => {
+    const invitation = await tx.invitation.create({
+      data: {
+        workspaceId: input.workspaceId,
+        email: input.email.toLowerCase().trim(),
+        role: input.role,
+        token,
+        createdById: input.actor.id,
+        expiresAt,
+      },
+    });
+    await writeAudit(tx, {
       workspaceId: input.workspaceId,
-      email: input.email.toLowerCase().trim(),
-      role: input.role,
-      token,
-      createdById: input.actor.id,
-      expiresAt,
-    },
+      actorUserId: input.actor.id,
+      action: "user.invited",
+      entityType: "invitation",
+      entityId: invitation.id,
+      payload: { email: invitation.email, role: invitation.role },
+    });
+    return invitation;
   });
 }
 
@@ -56,6 +68,13 @@ export async function acceptInvitation(input: {
       where: { id: inv.id },
       data: { acceptedAt: new Date(), acceptedById: user.id },
     });
+    await writeAudit(tx, {
+      workspaceId: inv.workspaceId,
+      actorUserId: user.id,
+      action: "user.joined",
+      entityType: "user",
+      entityId: user.id,
+    });
     return user;
   });
 }
@@ -66,9 +85,19 @@ export async function revokeInvitation(input: {
   invitationId: string;
 }) {
   if (!isAdmin(input.actor.role)) throw new Error("forbidden");
-  await prisma.invitation.update({
-    where: { id: input.invitationId },
-    data: { expiresAt: new Date() },
+  await prisma.$transaction(async (tx) => {
+    const invitation = await tx.invitation.update({
+      where: { id: input.invitationId },
+      data: { expiresAt: new Date() },
+    });
+    await writeAudit(tx, {
+      workspaceId: input.workspaceId,
+      actorUserId: input.actor.id,
+      action: "user.invitation_revoked",
+      entityType: "invitation",
+      entityId: invitation.id,
+      payload: { email: invitation.email },
+    });
   });
 }
 
