@@ -48,15 +48,15 @@ jobs:
         working-directory: apps/web
         run: pnpm typecheck
 
+      - name: Push schema
+        working-directory: apps/web
+        run: pnpm prisma db push
+
       - name: Unit tests
         working-directory: apps/web
         run: pnpm test
         env:
           DATABASE_URL: postgresql://influenceflow:dev_password@localhost:5432/influenceflow_test
-
-      - name: Push schema
-        working-directory: apps/web
-        run: pnpm prisma db push
 
       - name: Install browsers
         working-directory: apps/web
