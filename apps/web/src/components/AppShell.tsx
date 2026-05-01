@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { LogoutButton } from "./LogoutButton";
 import type { Session } from "next-auth";
+import { UserMenu } from "./UserMenu";
 
 export function AppShell({
   user,
@@ -19,15 +19,14 @@ export function AppShell({
           <Link className="block" href="/contacts/import">Import</Link>
           <Link className="block" href="/briefs">Briefs</Link>
           {isAdmin && <Link className="block" href="/team">Team</Link>}
+          {isAdmin && <Link className="block" href="/settings">Settings</Link>}
           {isAdmin && <Link className="block" href="/audit">Audit log</Link>}
         </nav>
       </aside>
       <div className="flex-1">
         <header className="flex items-center justify-between border-b p-4 text-sm">
-          <span>
-            {user.name} <span className="text-gray-500">({user.role})</span>
-          </span>
-          <LogoutButton />
+          <span className="text-gray-500">{user.role}</span>
+          <UserMenu name={user.name ?? user.email ?? "User"} />
         </header>
         <main className="p-6">{children}</main>
       </div>
