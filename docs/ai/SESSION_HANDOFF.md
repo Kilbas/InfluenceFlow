@@ -31,11 +31,9 @@ Plan: `docs/superpowers/plans/2026-04-28-influenceflow-phase-1.md`
 
 ---
 
-## Phase 2 Status: Planned, Not Started
+## Phase 2 Status: In progress (M1.1 in progress)
 
-Phase 2 (Bulk email engine) is fully designed but not yet implemented.
-
-All design decisions are recorded in `docs/product/PHASE_2_PRODUCT_DECISIONS.md`.
+Phase 2 (Bulk email engine) is in progress. All design decisions are recorded in `docs/product/PHASE_2_PRODUCT_DECISIONS.md`.
 
 **Summary of what Phase 2 adds:**
 - Brief model (campaign configuration)
@@ -46,8 +44,8 @@ All design decisions are recorded in `docs/product/PHASE_2_PRODUCT_DECISIONS.md`
 - Tracking pixel (workspace-level toggle)
 - Rate limiting (default 50 emails/day/member, configurable per workspace)
 
-Spec: `docs/superpowers/specs/2026-04-30-influenceflow-phase-2-design.md` *(to be created)*
-Plan: `docs/superpowers/plans/2026-04-30-influenceflow-phase-2.md` *(to be created)*
+Spec: `docs/superpowers/specs/2026-04-30-influenceflow-phase-2-design.md`
+Plan: `docs/superpowers/plans/2026-04-30-influenceflow-phase-2.md`
 
 ---
 
@@ -65,22 +63,29 @@ No application code was changed.
 
 ---
 
+## Current Execution State
+
+- **Phase:** Phase 2
+- **Milestone:** M1
+- **Task:** M1.1
+
+| Step | Status |
+|---|---|
+| Implementer | done |
+| Spec-reviewer | passed |
+| Code-reviewer | pending |
+| Fixes | pending |
+| Commit | pending |
+
 ## What Should Be Done Next
 
-1. Create the Phase 2 spec: `docs/superpowers/specs/2026-04-30-influenceflow-phase-2-design.md`
-2. Create the Phase 2 implementation plan: `docs/superpowers/plans/2026-04-30-influenceflow-phase-2.md`
-3. Start Phase 2 implementation (see `docs/product/PHASE_2_PRODUCT_DECISIONS.md` for all decisions).
+Continue Phase 2 implementation from M1.1.
 
-**Suggested Phase 2 implementation order:**
-1. Add Redis + BullMQ to Docker Compose and `apps/worker/` scaffold
-2. Prisma schema additions (briefs, contact_buckets, email_jobs, smtp_configs)
-3. Contact bucket state machine
-4. Brief CRUD UI (admin/owner)
-5. LLM email generation with retry logic
-6. Review queue UI (edit + inline AI refinement)
-7. Bulk send worker with rate limiting
-8. Tracking pixel
-9. SMTP per-member configuration UI
+**Important:**
+- Implementer is already done
+- Spec-reviewer passed
+- Resume from code-reviewer stage
+- Do NOT redo implementation
 
 ---
 
