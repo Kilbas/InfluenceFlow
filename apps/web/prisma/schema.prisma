@@ -12,29 +12,66 @@ enum Role {
   member
 }
 
+enum Bucket {
+  cold
+  first_sent
+  replied
+  quoted_price
+  agreed
+  rejected
+  no_reply_email
+  no_reply
+  archived
+}
+
+enum ToneOfVoice {
+  friendly
+  casual
+  professional
+  playful
+}
+
+enum SentEmailStatus {
+  queued
+  generating
+  awaiting_review
+  approved
+  sending
+  sent
+  generation_failed
+  send_failed
+  rejected
+}
+
 model Workspace {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  users         User[]
-  contacts      Contact[]
-  invitations   Invitation[]
-  importBatches ImportBatch[]
-  auditEvents   AuditEvent[]
+  users             User[]
+  contacts          Contact[]
+  invitations       Invitation[]
+  importBatches     ImportBatch[]
+  auditEvents       AuditEvent[]
+  briefs            Brief[]
+  sentEmails        SentEmail[]
+  webContexts       WebContext[]
+  settings          WorkspaceSettings?
 
   @@map("workspaces")
 }
 
 model User {
-  id           String    @id @default(uuid()) @db.Uuid
-  workspaceId  String    @map("workspace_id") @db.Uuid
-  email        String
-  passwordHash String    @map("password_hash")
-  displayName  String    @map("display_name")
-  role         Role
-  createdAt    DateTime  @default(now()) @map("created_at")
-  deletedAt    DateTime? @map("deleted_at")
+  id                   String    @id @default(uuid()) @db.Uuid
+  workspaceId          String    @map("workspace_id") @db.Uuid
+  email                String
+  passwordHash         String    @map("password_hash")
+  displayName          String    @map("display_name")
+  role                 Role
+  createdAt            DateTime  @default(now()) @map("created_at")
+  deletedAt            DateTime? @map("deleted_at")
+  approvedLettersCount Int       @default(0) @map("approved_letters_count")
+  forcePreviewMode     Boolean   @default(false) @map("force_preview_mode")
 
   workspace           Workspace    @relation(fields: [workspaceId], references: [id])
   ownedContacts       Contact[]    @relation("ContactOwner")
@@ -42,40 +79,47 @@ model User {
   invitationsAccepted Invitation[] @relation("InvitationAcceptedBy")
   importBatches       ImportBatch[]
   auditEvents         AuditEvent[] @relation("AuditActor")
+  smtp                MemberSmtp?
+  briefsCreated       Brief[]
+  sentEmailsAsSender  SentEmail[]  @relation("SentEmailSender")
 
   @@unique([workspaceId, email])
   @@map("users")
 }
 
 model Contact {
-  id                    String   @id @default(uuid()) @db.Uuid
-  workspaceId           String   @map("workspace_id") @db.Uuid
-  ownerUserId           String   @map("owner_user_id") @db.Uuid
+  id                    String    @id @default(uuid()) @db.Uuid
+  workspaceId           String    @map("workspace_id") @db.Uuid
+  ownerUserId           String    @map("owner_user_id") @db.Uuid
   email                 String
-  instagramHandle       String?  @map("instagram_handle")
-  instagramUrl          String?  @map("instagram_url")
-  displayName           String   @map("display_name")
+  instagramHandle       String?   @map("instagram_handle")
+  instagramUrl          String?   @map("instagram_url")
+  displayName           String    @map("display_name")
   language              String?
   country               String?
   niche                 String?
-  followersCount        Int?     @map("followers_count")
+  followersCount        Int?      @map("followers_count")
   notes                 String?
   phone                 String?
-  youtubeChannelName    String?  @map("youtube_channel_name")
-  agentActive           Boolean  @default(false) @map("agent_active")
-  sourceImportBatchId   String?  @map("source_import_batch_id") @db.Uuid
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  youtubeChannelName    String?   @map("youtube_channel_name")
+  agentActive           Boolean   @default(false) @map("agent_active")
+  sourceImportBatchId   String?   @map("source_import_batch_id") @db.Uuid
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
   deletedAt             DateTime? @map("deleted_at")
+  bucket                Bucket    @default(cold)
 
   workspace          Workspace    @relation(fields: [workspaceId], references: [id])
   owner              User         @relation("ContactOwner", fields: [ownerUserId], references: [id])
   sourceImportBatch  ImportBatch? @relation(fields: [sourceImportBatchId], references: [id])
+  webContext         WebContext?
+  sentEmails         SentEmail[]
 
   @@index([workspaceId, ownerUserId, agentActive])
   @@index([workspaceId, email])
   @@index([workspaceId, instagramHandle])
   @@index([workspaceId, agentActive])
+  @@index([workspaceId, bucket])
   @@map("contacts")
 }
 
@@ -170,5 +214,146 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model Brief {
+  id                 String      @id @default(uuid()) @db.Uuid
+  workspaceId        String      @map("workspace_id") @db.Uuid
+  createdByUserId    String      @map("created_by_user_id") @db.Uuid
+
+  name               String
+  productDescription String      @map("product_description") @db.Text
+  audienceOverlap    String      @map("audience_overlap") @db.Text
+  whyWorkWithUs      String      @map("why_work_with_us") @db.Text
+  keyProductBenefits String      @map("key_product_benefits") @db.Text
+
+  acceptsBarter      Boolean     @default(true) @map("accepts_barter")
+  barterOffer        String?     @map("barter_offer") @db.Text
+  acceptsPaid        Boolean     @default(false) @map("accepts_paid")
+  paidBudgetRange    String?     @map("paid_budget_range")
+  desiredFormat      String      @map("desired_format") @db.Text
+
+  toneOfVoice        ToneOfVoice @default(friendly) @map("tone_of_voice")
+  letterLanguage     String      @default("auto") @map("letter_language")
+  senderRole         String      @map("sender_role")
+
+  forbiddenPhrases   String[]    @map("forbidden_phrases")
+  noPriceFirstEmail  Boolean     @default(true) @map("no_price_first_email")
+
+  landingUrl         String?     @map("landing_url")
+  promoCode          String?     @map("promo_code")
+
+  archived           Boolean     @default(false)
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id])
+  createdBy  User        @relation(fields: [createdByUserId], references: [id])
+  sentEmails SentEmail[]
+
+  @@index([workspaceId, archived])
+  @@map("briefs")
+}
+
+model MemberSmtp {
+  userId            String    @id @map("user_id") @db.Uuid
+  host              String
+  port              Int
+  username          String
+  passwordEncrypted String    @map("password_encrypted")
+  senderName        String    @map("sender_name")
+  senderEmail       String    @map("sender_email")
+  isActive          Boolean   @default(false) @map("is_active")
+  testedAt          DateTime? @map("tested_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("member_smtp")
+}
+
+model WebContext {
+  id               String   @id @default(uuid()) @db.Uuid
+  contactId        String   @unique @map("contact_id") @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  summary          String?  @db.Text
+  rawSearchResults Json     @map("raw_search_results")
+  fetchedAt        DateTime @default(now()) @map("fetched_at")
+  expiresAt        DateTime @map("expires_at")
+
+  contact   Contact   @relation(fields: [contactId], references: [id])
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([expiresAt])
+  @@map("web_context")
+}
+
+model SentEmail {
+  id             String          @id @default(uuid()) @db.Uuid
+  workspaceId    String          @map("workspace_id") @db.Uuid
+  contactId      String          @map("contact_id") @db.Uuid
+  senderUserId   String          @map("sender_user_id") @db.Uuid
+  briefId        String          @map("brief_id") @db.Uuid
+
+  modelUsed      String?         @map("model_used")
+  subject        String?
+  bodyText       String?         @map("body_text") @db.Text
+  bodyHtml       String?         @map("body_html") @db.Text
+
+  status         SentEmailStatus @default(queued)
+  generatedAt    DateTime?       @map("generated_at")
+  approvedAt     DateTime?       @map("approved_at")
+  sentAt         DateTime?       @map("sent_at")
+  editedByUserId String?         @map("edited_by_user_id") @db.Uuid
+
+  smtpMessageId   String?        @map("smtp_message_id")
+  sequenceStep    Int?           @map("sequence_step")
+  trackingPixelId String         @default(uuid()) @map("tracking_pixel_id") @db.Uuid
+
+  errorMessage   String?         @map("error_message") @db.Text
+  retryCount     Int             @default(0) @map("retry_count")
+
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  workspace  Workspace        @relation(fields: [workspaceId], references: [id])
+  contact    Contact          @relation(fields: [contactId], references: [id])
+  sender     User             @relation("SentEmailSender", fields: [senderUserId], references: [id])
+  brief      Brief            @relation(fields: [briefId], references: [id])
+  openEvents EmailOpenEvent[]
+
+  @@index([workspaceId, status])
+  @@index([senderUserId, status])
+  @@index([trackingPixelId])
+  @@map("sent_emails")
+}
+
+model EmailOpenEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  sentEmailId String   @map("sent_email_id") @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  openedAt    DateTime @default(now()) @map("opened_at")
+
+  sentEmail SentEmail @relation(fields: [sentEmailId], references: [id])
+
+  @@index([sentEmailId, openedAt])
+  @@map("email_open_events")
+}
+
+model WorkspaceSettings {
+  workspaceId          String   @id @map("workspace_id") @db.Uuid
+  letterModel          String   @default("claude-sonnet-4-6") @map("letter_model")
+  summarizeModel       String   @default("claude-haiku-4-5") @map("summarize_model")
+  trackingEnabled      Boolean  @default(true) @map("tracking_enabled")
+  rateLimitPerMember   Int      @default(50) @map("rate_limit_per_member")
+  calibrationThreshold Int      @default(100) @map("calibration_threshold")
+  defaultBriefId       String?  @map("default_brief_id") @db.Uuid
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@map("workspace_settings")
 }
 
