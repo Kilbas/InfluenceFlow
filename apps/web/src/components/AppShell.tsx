@@ -17,6 +17,7 @@ export function AppShell({
         <nav className="space-y-2 text-sm">
           <Link className="block" href="/contacts">Contacts</Link>
           <Link className="block" href="/contacts/import">Import</Link>
+          <Link className="block" href="/briefs">Briefs</Link>
           {isAdmin && <Link className="block" href="/team">Team</Link>}
           {isAdmin && <Link className="block" href="/audit">Audit log</Link>}
         </nav>
