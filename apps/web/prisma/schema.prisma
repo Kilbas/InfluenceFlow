@@ -82,6 +82,7 @@ model User {
   smtp                MemberSmtp?
   briefsCreated       Brief[]
   sentEmailsAsSender  SentEmail[]  @relation("SentEmailSender")
+  sentEmailsEdited    SentEmail[]  @relation("SentEmailEditor")
 
   @@unique([workspaceId, email])
   @@map("users")
@@ -247,9 +248,10 @@ model Brief {
   createdAt          DateTime    @default(now()) @map("created_at")
   updatedAt          DateTime    @updatedAt @map("updated_at")
 
-  workspace  Workspace   @relation(fields: [workspaceId], references: [id])
-  createdBy  User        @relation(fields: [createdByUserId], references: [id])
-  sentEmails SentEmail[]
+  workspace       Workspace           @relation(fields: [workspaceId], references: [id])
+  createdBy       User                @relation(fields: [createdByUserId], references: [id])
+  sentEmails      SentEmail[]
+  usedAsDefaultIn WorkspaceSettings[] @relation("WorkspaceDefaultBrief")
 
   @@index([workspaceId, archived])
   @@map("briefs")
@@ -305,6 +307,7 @@ model SentEmail {
   approvedAt     DateTime?       @map("approved_at")
   sentAt         DateTime?       @map("sent_at")
   editedByUserId String?         @map("edited_by_user_id") @db.Uuid
+  editedBy       User?           @relation("SentEmailEditor", fields: [editedByUserId], references: [id])
 
   smtpMessageId   String?        @map("smtp_message_id")
   sequenceStep    Int?           @map("sequence_step")
@@ -352,7 +355,8 @@ model WorkspaceSettings {
   defaultBriefId       String?  @map("default_brief_id") @db.Uuid
   updatedAt            DateTime @updatedAt @map("updated_at")
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  defaultBrief Brief?    @relation("WorkspaceDefaultBrief", fields: [defaultBriefId], references: [id])
 
   @@map("workspace_settings")
 }
