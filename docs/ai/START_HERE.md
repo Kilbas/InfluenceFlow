@@ -17,7 +17,7 @@ Single repo, single database, one deployment — phases stack on top of each oth
 | Phase | Status |
 |---|---|
 | Phase 1 — Foundation (contacts, import, auth, team, audit log) | **Complete** |
-| Phase 2 — Bulk email engine (briefs, outbound SMTP, LLM first emails, review queue, buckets) | **Planned, not started** |
+| Phase 2 — Bulk email engine (briefs, outbound SMTP, LLM first emails, review queue, buckets) | **In progress (M1.1 in progress)** |
 | Phase 3+ | Future |
 
 ---
@@ -106,3 +106,42 @@ pnpm test:e2e    # Playwright e2e (starts dev server automatically)
 2. If working on Phase 2, read `docs/product/PHASE_2_PRODUCT_DECISIONS.md` — all key decisions are already made.
 3. Check the git log: `git log --oneline -20`
 4. Run `pnpm test` to confirm the baseline is green.
+
+---
+
+## Current Execution State
+
+- **Phase:** Phase 2
+- **Milestone:** M1
+- **Task:** M1.1
+
+| Step | Status |
+|---|---|
+| Implementer | done |
+| Spec-reviewer | passed |
+| Code-reviewer | pending |
+| Fixes | pending |
+| Commit | pending |
+
+---
+
+## Execution Mode (IMPORTANT)
+
+All Phase 2 work follows a strict subagent-driven pipeline. For each task:
+
+1. Implementer subagent
+2. Spec-reviewer subagent
+3. Code-reviewer subagent
+4. Fixes
+5. Tests
+6. Commit
+
+**Rules:**
+- Do NOT redo completed steps
+- Always continue from `docs/ai/SESSION_HANDOFF.md`
+- Do NOT invent features outside specs
+- Do NOT skip reviewers
+- Do NOT jump between tasks
+- Complete one task fully before moving to the next
+- Use `docs/superpowers/specs/` as the single source of truth
+- Use `docs/superpowers/plans/` for task sequencing
