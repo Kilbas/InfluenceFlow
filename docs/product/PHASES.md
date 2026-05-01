@@ -30,10 +30,16 @@ No email sending, no LLM, no inbox polling, no buckets, no briefs. Pure data fou
 
 ## Phase 2 — Outbound Email Engine
 
-**Status: Planned, not started**
+**Status: In progress (M1.1 in progress)**
 **Design decisions:** `docs/product/PHASE_2_PRODUCT_DECISIONS.md`
-**Spec:** `docs/superpowers/specs/2026-04-30-influenceflow-phase-2-design.md` *(to be created)*
-**Plan:** `docs/superpowers/plans/2026-04-30-influenceflow-phase-2.md` *(to be created)*
+**Spec:** `docs/superpowers/specs/2026-04-30-influenceflow-phase-2-design.md`
+**Plan:** `docs/superpowers/plans/2026-04-30-influenceflow-phase-2.md`
+
+**Execution model:** All implementation must follow strict subagent-driven pipeline:
+
+`implementer → spec-reviewer → code-reviewer → fixes → tests → commit`
+
+No task is considered complete without passing all stages.
 
 ### What ships
 
