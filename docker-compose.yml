@@ -5,12 +5,17 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://influenceflow:${DB_PASSWORD}@db:5432/influenceflow
+      REDIS_URL: redis://redis:6379
       AUTH_SECRET: ${AUTH_SECRET}
       AUTH_URL: ${AUTH_URL}
       ADMIN_INIT_EMAIL: ${ADMIN_INIT_EMAIL}
       WORKSPACE_NAME: ${WORKSPACE_NAME}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -18,6 +23,25 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://influenceflow:${DB_PASSWORD}@db:5432/influenceflow
+      REDIS_URL: redis://redis:6379
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      APP_URL: ${AUTH_URL}
+      GENERATE_CONCURRENCY: ${GENERATE_CONCURRENCY:-3}
+      SEND_CONCURRENCY: ${SEND_CONCURRENCY:-2}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
@@ -33,5 +57,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - influenceflow_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   influenceflow_db:
+  influenceflow_redis:
