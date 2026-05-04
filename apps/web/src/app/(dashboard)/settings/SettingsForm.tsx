@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LETTER_MODELS, SUMMARIZE_MODELS } from "@/server/workspace-settings";
+import { LETTER_MODELS, SUMMARIZE_MODELS } from "@/lib/model-constants";
 
 type Initial = {
   letterModel: string;

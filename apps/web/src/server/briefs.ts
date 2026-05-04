@@ -7,6 +7,7 @@ import {
 } from "@/lib/audit-actions";
 import type { Role } from "@prisma/client";
 import { z } from "zod";
+import { TONE_VALUES } from "@/lib/model-constants";
 
 export type AuthCtx = {
   workspaceId: string;
@@ -15,8 +16,6 @@ export type AuthCtx = {
 };
 
 const isAdmin = (r: Role) => r === "admin" || r === "owner";
-
-export const TONE_VALUES = ["friendly", "casual", "professional", "playful"] as const;
 
 // Zod schema is the single validation boundary for brief inputs.
 // Used by both create (full) and update (partial, via .partial()).
