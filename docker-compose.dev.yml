@@ -6,9 +6,9 @@ services:
       POSTGRES_PASSWORD: dev_password
       POSTGRES_DB: influenceflow_dev
     ports:
-      - "5432:5432"
+      - "${DEV_DB_PORT:-5433}:5432"
     volumes:
-      - influenceflow_db:/var/lib/postgresql/data
+      - influenceflow_db_dev:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U influenceflow"]
       interval: 5s
@@ -16,4 +16,4 @@ services:
       retries: 10
 
 volumes:
-  influenceflow_db:
+  influenceflow_db_dev:

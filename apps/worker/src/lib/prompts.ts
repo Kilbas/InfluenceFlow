@@ -14,6 +14,11 @@ export type PromptBriefInput = {
   noPriceFirstEmail: boolean;
   landingUrl: string | null;
   promoCode: string | null;
+  // Spec §6.2: barter/paid offer section (optional for backward compat with M4 tests)
+  acceptsBarter?: boolean;
+  barterOffer?: string | null;
+  acceptsPaid?: boolean;
+  paidBudgetRange?: string | null;
 };
 
 export type PromptContactInput = {
@@ -23,6 +28,7 @@ export type PromptContactInput = {
   followersCount: number | null;
   language: string | null;
   notes: string | null;
+  country?: string | null;
 };
 
 export type PromptSenderInput = {
@@ -92,6 +98,12 @@ function formatBriefSection(
     `Language: ${language}`,
   ];
 
+  if (brief.acceptsBarter !== undefined || brief.acceptsPaid !== undefined) {
+    lines.push(`What we offer the creator:`);
+    lines.push(`- Barter: ${brief.acceptsBarter ? (brief.barterOffer ?? "offered") : "not offered"}`);
+    lines.push(`- Paid: ${brief.acceptsPaid ? (brief.paidBudgetRange ?? "offered") : "not offered"}`);
+  }
+
   if (brief.noPriceFirstEmail) {
     lines.push(`Do NOT mention pricing or budget in this email.`);
   }
@@ -128,6 +140,10 @@ function formatCreatorSection(
     lines.push(`Niche: ${contact.niche}`);
   }
 
+  if (contact.country) {
+    lines.push(`Country: ${contact.country}`);
+  }
+
   if (contact.followersCount != null) {
     lines.push(`Followers: ${contact.followersCount.toLocaleString()}`);
   }
@@ -150,6 +166,10 @@ function formatCreatorSection(
   return lines.join("\n");
 }
 
+function buildClosingInstruction(): string {
+  return "Now write the email. Output JSON only.";
+}
+
 export function buildUserPrompt(opts: {
   brief: PromptBriefInput;
   contact: PromptContactInput;
@@ -168,7 +188,7 @@ export function buildUserPrompt(opts: {
     },
     {
       type: "text",
-      text: formatCreatorSection(contact, sender, webContextSummary),
+      text: formatCreatorSection(contact, sender, webContextSummary) + "\n\n" + buildClosingInstruction(),
     },
   ];
 }
