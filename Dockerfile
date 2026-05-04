@@ -23,6 +23,7 @@ COPY --from=builder /app/apps/web/public ./apps/web/public
 COPY --from=builder /app/apps/web/package.json ./apps/web/
 COPY --from=builder /app/apps/web/prisma ./apps/web/prisma
 COPY --from=builder /app/apps/web/prisma.config.ts ./apps/web/
+COPY --from=builder /app/apps/web/src/lib/password.ts ./apps/web/src/lib/
 COPY --from=builder /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./

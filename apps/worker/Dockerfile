@@ -16,6 +16,8 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY apps/worker ./apps/worker
 COPY apps/web/prisma ./apps/web/prisma
 COPY apps/web/prisma.config.ts ./apps/web/
+COPY apps/web/src/lib/llm.ts ./apps/web/src/lib/
+COPY apps/web/src/lib/search.ts ./apps/web/src/lib/
 COPY package.json pnpm-workspace.yaml ./
 
 WORKDIR /app/apps/worker

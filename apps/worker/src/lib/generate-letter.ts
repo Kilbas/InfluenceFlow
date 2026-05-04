@@ -6,7 +6,7 @@ import {
   MalformedJsonError,
   type ContentBlock,
 } from "@/lib/llm";
-import { getSendEmailQueue } from "@/lib/queue";
+import { getSendEmailQueue } from "./send-queue";
 import { prisma } from "./db";
 import { writeAudit } from "./audit";
 import { ensureFreshWebContext } from "./web-context";

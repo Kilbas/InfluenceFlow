@@ -32,8 +32,7 @@ vi.mock("@/lib/llm", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/queue", () => ({
-  getGenerateLetterQueue: vi.fn(),
+vi.mock("../../src/lib/send-queue", () => ({
   getSendEmailQueue: vi.fn(() => ({ add: vi.fn() })),
 }));
 
@@ -43,7 +42,7 @@ import { processGenerateLetterJob } from "../../src/lib/generate-letter";
 import { prisma } from "../../src/lib/db";
 import { ensureFreshWebContext } from "../../src/lib/web-context";
 import { generateJson, ValidationError, TransientLLMError } from "@/lib/llm";
-import { getSendEmailQueue } from "@/lib/queue";
+import { getSendEmailQueue } from "../../src/lib/send-queue";
 
 const mockPrisma = prisma as unknown as {
   sentEmail: { findUnique: Mock; update: Mock };
