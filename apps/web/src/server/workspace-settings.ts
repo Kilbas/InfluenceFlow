@@ -3,6 +3,7 @@ import { writeAudit } from "@/lib/audit";
 import { AUDIT_WORKSPACE_SETTINGS_UPDATED } from "@/lib/audit-actions";
 import type { Role } from "@prisma/client";
 import { z } from "zod";
+import { LETTER_MODELS, SUMMARIZE_MODELS } from "@/lib/model-constants";
 
 export type AuthCtx = {
   workspaceId: string;
@@ -11,17 +12,6 @@ export type AuthCtx = {
 };
 
 const isAdmin = (r: Role) => r === "admin" || r === "owner";
-
-export const LETTER_MODELS = [
-  "claude-sonnet-4-6",
-  "claude-opus-4-7",
-  "claude-haiku-4-5",
-] as const;
-
-export const SUMMARIZE_MODELS = [
-  "claude-haiku-4-5",
-  "claude-sonnet-4-6",
-] as const;
 
 export const settingsPatchSchema = z.object({
   letterModel: z.enum(LETTER_MODELS).optional(),

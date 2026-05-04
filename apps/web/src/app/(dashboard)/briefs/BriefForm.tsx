@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { TONE_VALUES } from "@/server/briefs";
+import { TONE_VALUES } from "@/lib/model-constants";
 
 export type BriefFormValues = {
   name: string;
